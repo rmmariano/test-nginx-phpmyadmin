@@ -1,0 +1,49 @@
+version: '3'
+
+volumes:
+  portainer_data:
+
+services:
+  cdsr_nginx:
+    container_name: cdsr_nginx
+    image: nginx:1.17.6
+    restart: always
+    volumes:
+      - ./volumes/nginx/nginx.template:/etc/nginx/conf.d/mysite.template
+    env_file:
+      - ./env_files/nginx.env
+    command: /bin/bash -c "envsubst '$$NGINX_HOST $$NGINX_PORT' < /etc/nginx/conf.d/mysite.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    networks:
+      - cdsr
+    ports:
+      - 8089:8089
+
+  cdsr_db:
+    container_name: cdsr_db
+    image: mariadb:10.5.3
+    restart: always
+    volumes:
+      - ../data/mysqldata:/var/lib/mysql
+    env_file:
+      - ./env_files/db.env
+    networks:
+      - cdsr
+    ports:
+      - 8090:3306
+
+  cdsr_phpmyadmin:
+    container_name: cdsr_phpmyadmin
+    image: phpmyadmin/phpmyadmin:5.0.1
+    restart: always
+    env_file:
+      - ./env_files/phpmyadmin.env
+    volumes:
+      - ./volumes/phpmyadmin/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - cdsr
+    ports:
+      - 8091:80
+
+networks:
+  cdsr:
+    driver: bridge
